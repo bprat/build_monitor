@@ -6,3 +6,4 @@ target/**/*
 .classpath
 .project
 src/main/resources/lib/**/*
+src/main/resources/settings.xml
