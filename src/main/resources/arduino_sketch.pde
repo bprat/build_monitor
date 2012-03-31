@@ -3,7 +3,7 @@ int pmtPin = 3;
 int buzzerPin = 4;
 int speakerPin = 9;
 int length = 4;
-char notes[] = "cab "; // a space represents a rest
+char notes[] = "cab "; // space for a pause when looping
 int beats[] = {1, 1, 1, 2};
 int tempo = 50;
 int val;
@@ -11,9 +11,9 @@ int val;
 //IR stuff
 int IR_OUT = 13;
 int debug = 1;
-int start_bit = 2000;		//Start bit threshold (Microseconds)
-int bin_1 = 1200;			//Binary 1 threshold (Microseconds)
-int bin_0 = 600;			//Binary 0 threshold (Microseconds)
+int start_bit = 2000;	//Start bit threshold (Microseconds)
+int bin_1 = 1200;	//Binary 1 threshold (Microseconds)
+int bin_0 = 600;	//Binary 0 threshold (Microseconds)
 byte power_off = 0x7A;
 byte power_toggle = 0x54;//B1010100
 byte array_signal[] = {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
@@ -23,8 +23,7 @@ byte value_decode1 = 0;
 byte value_decode2 = 0;
 int delay_value = 600;
 
-void setup()
-{
+void setup() {
   pinMode(ingPin, OUTPUT);
   pinMode(pmtPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
@@ -34,12 +33,9 @@ void setup()
   Serial.flush();
 }
 
-void loop()
-{
-  if (Serial.available() > 0)
-  {
+void loop() {
+  if (Serial.available() > 0) {
     val = Serial.read();
-//    Serial.println(val);    
     while(val != 78) {
       if(val == 90) {
         togglePower(power_off);
@@ -67,7 +63,6 @@ void loop()
         playPiezo();
         val = val - 32;
       }
-      //Serial.println("updated - ");
       //Serial.print(val);
       
       if(val == 73) {
@@ -98,7 +93,6 @@ void loop()
 }
 
 void togglePower(int code) {
-  //Serial.println("power ... ");
   for(int count=0; count<3;count++) {
     command_decode(code);
     signal_send();
@@ -106,7 +100,7 @@ void togglePower(int code) {
   return;
 }
 
-void command_decode(int binary_command) {  //less space than five arrays)
+void command_decode(int binary_command) {
   value_decode1 = binary_command;
   for (int i = 6; i > -1; i--) {
     value_decode2 = value_decode1 & B1;
@@ -132,14 +126,14 @@ void signal_send() {
     carrier_make();
   }
   for (int a = 0; a < 12; a++) {
-    delayMicroseconds(delay_value);//time down is always 0.6 ms
+    delayMicroseconds(delay_value); //time down is always 0.6 ms
     if (array_signal[a] == 1) {
-      for (int i = 0; i < 45; i++) {//"1" is always 1.2 ms high
+      for (int i = 0; i < 45; i++) { //"1" is always 1.2 ms high
         carrier_make();
       }
     }
     else {
-      for (int i = 0; i < 22; i++) {//"0" is always 0.6 ms high
+      for (int i = 0; i < 22; i++) { //"0" is always 0.6 ms high
         carrier_make();
       }
     }
@@ -159,7 +153,6 @@ void playTone(int tone, int duration) {
 void playNote(char note, int duration) {
   char names[] = { 'c', 'a', 'b' };
   int tones[] = { 1915, 1136, 1014 };
-  
   // play the tone corresponding to the note name
   for (int i = 0; i < 3; i++) {
     if (names[i] == note) {
