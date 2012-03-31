@@ -7,23 +7,25 @@ import gnu.io.SerialPortEventListener;
 
 import java.util.Enumeration;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
 
 public class SerialCommunicator extends BaseCommunicator implements SerialPortEventListener {
 	private final Logger LOGGER = Logger.getLogger(SerialCommunicator.class);
 	SerialPort serialPort;
-	private static final String PORT_NAME = "COM4"; /* for the Arduino board */
 	/** Default bits per second for COM port. */
 	private static final int DATA_RATE = 9600;
 	
 	@Override
-	public boolean initialize() {
+	public boolean initialize() throws ConfigurationException {
 		CommPortIdentifier portId = null;
+		XMLConfiguration config = new XMLConfiguration("settings.xml");
 		@SuppressWarnings("rawtypes")
 		Enumeration portEnum = CommPortIdentifier. getPortIdentifiers();
 		while (portEnum.hasMoreElements()) {
 			CommPortIdentifier currPortId = (CommPortIdentifier) portEnum.nextElement();
-			if (currPortId.getName().equals(PORT_NAME)) {
+			if (currPortId.getName().equals(config.getProperty("serial.port_name"))) {
 				portId = currPortId;
 				break;
 			}
@@ -83,7 +85,7 @@ public class SerialCommunicator extends BaseCommunicator implements SerialPortEv
 			}
 		}// other eventTypes can be ignored, just logging them to see what's going on
 		else {
-			LOGGER.info("unhandled event: " + event.toString());
+			LOGGER.warn("unhandled event: " + event.toString());
 		}
 	}
 

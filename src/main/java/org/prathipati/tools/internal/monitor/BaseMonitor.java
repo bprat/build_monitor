@@ -11,4 +11,5 @@ public abstract class BaseMonitor {
 	private static final Log LOGGER = LogFactory.getLog(BaseMonitor.class);
 	public BaseMonitor()  {}
 	public void check() throws Exception {}
+	public void destroy() {}
 }

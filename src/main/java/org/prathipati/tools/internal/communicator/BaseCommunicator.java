@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 
 public abstract class BaseCommunicator {
@@ -13,7 +14,7 @@ public abstract class BaseCommunicator {
 	/** Milliseconds to block while waiting for port open */
 	protected static final int TIME_OUT = 2000;
 
-	public abstract boolean initialize();
+	public abstract boolean initialize() throws ConfigurationException;
 
 	public synchronized void close() {
 	}

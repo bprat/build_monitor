@@ -3,6 +3,8 @@ package org.prathipati.tools.internal;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.prathipati.tools.internal.communicator.SerialCommunicator;
@@ -15,49 +17,57 @@ import org.prathipati.tools.internal.monitor.HudsonMonitor;
 public class BuildMonitor {
 	private static final Log LOGGER = LogFactory.getLog(BuildMonitor.class);
 	boolean tvOn = false;
-	boolean sleepMode = false;
-	SerialCommunicator sch = new SerialCommunicator();
+	SerialCommunicator sch;
+	int sleep_time_in_millis ;
 	
 	public static void main(final String[] args) {
-		BuildMonitor monitor = new BuildMonitor();
-		monitor.run();
+		new BuildMonitor().run();
 	}
 	
 	private void run() {
-		sch.initialize();
+		
+		HudsonMonitor hm = null;
 		try {
-			HudsonMonitor hm = new HudsonMonitor();
+			XMLConfiguration config = new XMLConfiguration("settings.xml");
+			sleep_time_in_millis = NumberUtils.toInt( (String) config.getProperty("hudson_monitor.sleep_time_in_millis"));
+			sch = new SerialCommunicator();
+			sch.initialize();
+			hm = new HudsonMonitor();
 			while(true) {
 				if(isAwake()) {
 					if(!tvOn) {
+						LOGGER.info("initial setup or waking up from sleep, reset TV");
 						sch.writeData('Z');
-						Thread.sleep(5000);
-						LOGGER.info("powering on now");
+						Thread.sleep(3000);
+						LOGGER.info("powering on");
 						sch.writeData('A');
 						tvOn = true;
 					} else {
 						hm.check();
 						sch.writeData(hm.getSerialOutput());
 					}
-					/*if (hm.getSerialOutput() == 'A') {
-						sch.writeData('Z');
-						Thread.sleep(5000);
-						LOGGER.info("powering on now");
-						sch.writeData('A');
-					}*/
-					Thread.sleep(10000);
+					Thread.sleep(sleep_time_in_millis);
 				} else {
-					sleepMode = true;
+					if(tvOn) {
+						LOGGER.info("nap time..");
+						tvOn = false;
+					}
+					sch.writeData('Z');
 					Thread.sleep(300000);
 				}
 			}
 		} catch(Exception e) {
 			LOGGER.error(e.getMessage(), e);
-		} 
+		} finally {
+			if (hm != null) {
+				hm.destroy();
+			}
+		}
 	}
 	
 	private boolean isAwake() {
-		int hour = Calendar.getInstance(TimeZone.getTimeZone("GMT-7:00")).get(Calendar.HOUR_OF_DAY);
-		return (hour > 18 && hour < 7) ? false : true;
+		int hour = Calendar.getInstance(TimeZone.getDefault()).get(Calendar.HOUR_OF_DAY);
+		LOGGER.info("hour: " + hour);
+		return (hour < 7 || hour > 17) ? false : true;
 	}
 }
