@@ -39,7 +39,7 @@ void loop()
   if (Serial.available() > 0)
   {
     val = Serial.read();
-    
+//    Serial.println(val);    
     while(val != 78) {
       if(val == 90) {
         togglePower(power_off);
@@ -47,10 +47,10 @@ void loop()
       } else if(val == 65) {
         togglePower(power_toggle);
         val='N';
-      } 
-      Serial.println("b4 buzzer ");
-      Serial.println(val);
+      }
+
       if(val > 128) { // build failure
+        //Serial.println("buzzer.. ");
         digitalWrite(buzzerPin, HIGH);
         delay(200);
         digitalWrite(buzzerPin, LOW);
@@ -67,8 +67,9 @@ void loop()
         playPiezo();
         val = val - 32;
       }
-      Serial.println(val);
-
+      //Serial.println("updated - ");
+      //Serial.print(val);
+      
       if(val == 73) {
       digitalWrite(ingPin, HIGH);
       } else if(val == 80) {
@@ -97,7 +98,7 @@ void loop()
 }
 
 void togglePower(int code) {
-  Serial.println("power ... ");
+  //Serial.println("power ... ");
   for(int count=0; count<3;count++) {
     command_decode(code);
     signal_send();
