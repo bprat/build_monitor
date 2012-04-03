@@ -55,19 +55,17 @@ public class AuthHelper {
 		sleep_time_in_millis = NumberUtils.toInt( (String) config.getProperty("hudson_monitor.sleep_time_in_millis"));
 	}
 	
-	@SuppressWarnings("deprecation")
 	public boolean initialize() throws NoSuchAlgorithmException, KeyManagementException {
 		SSLContext ctx = SSLContext.getInstance("SSL");
 		ctx.init(new KeyManager[0], new TrustManager[] { new DefaultTrustManager() }, new SecureRandom());
 		SSLContext.setDefault(ctx);
 
-		SSLSocketFactory sf = new SSLSocketFactory(ctx);
-		sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-		Scheme httpsScheme = new Scheme(scheme, sf, port);
+		SSLSocketFactory sf = new SSLSocketFactory(ctx, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+		Scheme httpsScheme = new Scheme(scheme, port, sf);
 		SchemeRegistry schemeRegistry = new SchemeRegistry();
 		schemeRegistry.register(httpsScheme);
 		
-		cm = new SingleClientConnManager(params, schemeRegistry);
+		cm = new SingleClientConnManager(schemeRegistry);
 		targetHost = new HttpHost((String)config.getProperty("hudson_monitor.hostname"), port, scheme);
 		httpclient = new DefaultHttpClient(cm, params);
 		Console console = System.console();
@@ -89,44 +87,6 @@ public class AuthHelper {
 		// Add AuthCache to the execution context
 		localcontext.setAttribute(ClientContext.AUTH_CACHE, authCache);
 		return true;
-	}
-	
-/*	public static class DefaultTrustManager implements TrustManager, X509TrustManager {
-		public X509Certificate[] getAcceptedIssuers() {
-		return new X509Certificate[0];
-		}
-
-		public boolean isServerTrusted(final X509Certificate[] certs) {
-		return true;
-		}
-
-		public boolean isClientTrusted(final X509Certificate[] certs) {
-		return true;
-		}
-
-		//@Override
-		public void checkServerTrusted(final X509Certificate[] certs, final String authType)
-				throws java.security.cert.CertificateException {}
-		public void checkClientTrusted(final X509Certificate[] certs, final String authType)
-				throws java.security.cert.CertificateException {}
-	}*/
-
-	/**
-	 * Create a trust manager to by-pass validating certificate chains
-	 * a li'l trouble with certificates.. download the certificate file .crt/.cer and run this command
-	 * ...\jre1.5.0_17\lib\security>keytool -keystore cacerts -import -file hudson.crt -alias hudson
-	 */
-	private static void trustAllHttpsCertificates() {
-		final TrustManager tman = new DefaultTrustManager();
-		final TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[]{tman};
-		SSLContext sslc = null;
-		try {
-			sslc = SSLContext.getInstance("SSL");
-			sslc.init(null, trustAllCerts, null);
-		} catch (Exception e) {
-			LOGGER.error(e.getMessage());
-		}
-		javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sslc.getSocketFactory());
 	}
 
 	public static class DefaultTrustManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
