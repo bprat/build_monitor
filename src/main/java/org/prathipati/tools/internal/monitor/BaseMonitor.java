@@ -10,6 +10,8 @@ import org.apache.commons.logging.LogFactory;
 public abstract class BaseMonitor {
 	private static final Log LOGGER = LogFactory.getLog(BaseMonitor.class);
 	public BaseMonitor()  {}
-	public void check() throws Exception {}
+	public boolean check() throws Exception {
+		return false;
+	}
 	public void destroy() {}
 }

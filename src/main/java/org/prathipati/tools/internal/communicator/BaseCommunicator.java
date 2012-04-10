@@ -21,16 +21,22 @@ public abstract class BaseCommunicator {
 	
 	public synchronized void writeData(byte[] data) {
 		try {
-			LOGGER.info("writing data: " + data);
+			//LOGGER.info("writing data: " + data);
 			output.write(data);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
+	public synchronized void writeData(boolean noChange, int data) {
+		if(!noChange) {
+			LOGGER.info("writing data: " + data);
+		}
+		writeData(data);
+	}
+
 	public synchronized void writeData(int data) {
 		try {
-			LOGGER.info("writing data: " + data);
 			output.write(data);
 		} catch (IOException e) {
 			e.printStackTrace();

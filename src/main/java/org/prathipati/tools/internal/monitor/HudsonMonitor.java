@@ -41,6 +41,8 @@ public class HudsonMonitor extends BaseMonitor {
 	final String scheme ;
 	final int port ;
 	XMLConfiguration config ;
+	boolean reportedNoChange = false;
+	private static String SEP = ", ";
 	
 	@SuppressWarnings("unchecked")
 	public HudsonMonitor() throws ConfigurationException, NoSuchAlgorithmException, KeyManagementException {
@@ -59,15 +61,14 @@ public class HudsonMonitor extends BaseMonitor {
 	}
 
 	@Override
-	public void check() throws Exception {
+	public boolean check() throws Exception {
+		boolean noChange = true;
 		try {
 			HttpGet httpget = new HttpGet((String) config.getProperty("hudson_monitor.url"));
 			LOGGER.debug("executing request: " + httpget.getRequestLine());
-			int prevIFailCount = 0, prevPFailCount = 0, iFailCount = 0, pFailCount = 0;
+			String failedProjects = "";
 			prevFailureCount = failureCount;
 			failureCount = 0;
-			prevIFailCount = iFailCount;
-			prevPFailCount = pFailCount;
 			String status = "";
 			HttpResponse response = authHelper.getHttpclient().execute(authHelper.getTargetHost(), httpget, authHelper.getLocalcontext());
 			HttpEntity entity = response.getEntity();
@@ -85,38 +86,41 @@ public class HudsonMonitor extends BaseMonitor {
 					if (iProjectList.contains(projectName)) {
 						status = getNode(fstNode, buildStatusAttribute).getNodeValue();
 						if (StringUtils.equalsIgnoreCase(status, failureStatusString)) {
-							iFailCount++;
 							failureCount++;
 							iStatus = 1;
-							LOGGER.info(status + ": " + projectName);
+							failedProjects += (projectName + SEP);
 						}
 					} else if (pProjectList.contains(projectName)) {
 						status = getNode(fstNode, buildStatusAttribute).getNodeValue();
 						if (StringUtils.equalsIgnoreCase(status, failureStatusString)) {
-							pFailCount++;
 							failureCount++;
 							pStatus = 2;
-							LOGGER.info(status + ": " + projectName);
+							failedProjects += (projectName + SEP);
 						}
 					}
 				}
 				int outInt = iStatus + pStatus;
 				serialOutput = (outInt == 0) ? 'N' : (outInt == 1) ? 'I' : (outInt == 2) ? 'P' : 'B';
-				boolean newFailure = ((prevOutput != serialOutput && prevOutput != (serialOutput + 32)) && serialOutput != 'N') ? true : false;
-				// if(this.failureCount > this.prevFailureCount) serialOutput+=32;
 				serialOutput += (failureCount > prevFailureCount ? 64 : (failureCount < prevFailureCount ? 32 : 0));
 				prevOutput = serialOutput;
 				if(failureCount != prevFailureCount) {
 					LOGGER.info("Out: " + new Integer(serialOutput) + ", failureCount: " + failureCount + ", prevFailureCount: " + prevFailureCount);
-				}
+					LOGGER.info(StringUtils.isBlank(failedProjects) ? "No failed projects" : failedProjects.substring(0, failedProjects.length()-2));
+					reportedNoChange = false;
+					noChange = false;
+				} else if(!reportedNoChange){
+					LOGGER.info("Nothing changed since last iteration, waiting till there's something to report... ");
+					reportedNoChange = true;
+				} 
 			} else {
 				LOGGER.error(response.getStatusLine());
-				return;
+				return false;
 			}
 			EntityUtils.consume(entity);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
+		return noChange;
 	}
 
 	@Override

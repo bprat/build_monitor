@@ -33,6 +33,7 @@ public class BuildMonitor {
 			sch = new SerialCommunicator();
 			sch.initialize();
 			hm = new HudsonMonitor();
+			boolean noChange;
 			while(true) {
 				if(isAwake()) {
 					if(!tvOn) {
@@ -43,8 +44,8 @@ public class BuildMonitor {
 						sch.writeData('A');
 						tvOn = true;
 					} else {
-						hm.check();
-						sch.writeData(hm.getSerialOutput());
+						noChange = hm.check();
+						sch.writeData(noChange, hm.getSerialOutput());
 					}
 					Thread.sleep(sleep_time_in_millis);
 				} else {
@@ -67,7 +68,7 @@ public class BuildMonitor {
 	
 	private boolean isAwake() {
 		int hour = Calendar.getInstance(TimeZone.getDefault()).get(Calendar.HOUR_OF_DAY);
-		LOGGER.info("hour: " + hour);
-		return (hour < 7 || hour > 17) ? false : true;
+		int day = Calendar.getInstance(TimeZone.getDefault()).get(Calendar.DAY_OF_WEEK);
+		return (day == 1 || day == 7 || hour < 7 || hour > 18) ? false : true;
 	}
 }
